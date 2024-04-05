@@ -10,5 +10,6 @@ LIBS=-lparser
 
 msh: $(OBJ)
 	$(CC) $(FLAGS) -L. -o $@ $< $(LIBS) -Wl,-rpath=.
+
 clean:
 	rm -f ./msh.o ./msh
