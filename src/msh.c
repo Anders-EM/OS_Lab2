@@ -202,6 +202,29 @@ int main(int argc, char* argv[])
 			else {
 				// Print command
 				print_command(argvv, filev, in_background);
+                int pid = fork();
+                switch (pid) {
+                    case -1:
+                        perror("Error in fork");
+                        return -1;
+                    
+                    case 0: //child
+                        getCompleteCommand(argvv,0);
+                        execvp(argv_execvp[0], argv_execvp);
+                        perror("Error in exec call");
+                        break;
+
+                    default: // parent
+                        if (in_background == 0) {
+                            while (wait(&status) != pid);
+                        
+                        } else {
+                            printf("Child process identifier: %d\n", pid);
+                        }
+                        break;
+                }
+                
+
 			}
 		}
 	}
