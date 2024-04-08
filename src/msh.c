@@ -210,9 +210,42 @@ int main(int argc, char* argv[])
                     
                     case 0: //child
                         getCompleteCommand(argvv,0);
-                        execvp(argv_execvp[0], argv_execvp);
-                        perror("Error in exec call");
-                        break;
+                        
+                        if (command_counter == 2) {
+                            int fd[2];
+                            if (pipe(fd) < 0) {
+                                perror("Error with pipe");
+                                exit(-1);
+                            }
+                            int pid2 = fork();
+                            switch(pid2) {
+                                case -1:
+                                    perror("Error in fork");
+                                    exit(-1);
+                                case 0: // grandchild, run first command
+                                    close(fd[0]);
+                                    close(STDOUT_FILENO);
+                                    dup(fd[1]);
+                                    close(fd[1]);
+                                    execvp(argv_execvp[0], argv_execvp);
+                                    perror("Error in exec call");
+                                    break;
+                                default: // still child, runs second command
+                                    getCompleteCommand(argvv, 1);
+                                    close(fd[1]);
+                                    close(STDIN_FILENO);
+                                    dup(fd[0]);
+                                    close(fd[0]);
+                                    execvp(argv_execvp[0], argv_execvp);
+                                    perror("Error in exec call");
+                                    break;
+                            }
+
+                        } else {
+                            execvp(argv_execvp[0], argv_execvp);
+                            perror("Error in exec call");
+                            break;
+                        }
 
                     default: // parent
                         if (in_background == 0) {
