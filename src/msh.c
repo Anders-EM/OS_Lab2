@@ -149,25 +149,25 @@ int n_elem = 0;
         
         do {
 
-            printf("%d ", num);
+            fprintf(stderr, "%d ", num);
 
             for (int i = 0; i < history[cur].num_commands; ++i) {
                 for (int j = 0; history[cur].argvv[i][j] != NULL; ++j) {
-                    printf("%s", history[cur].argvv[i][j]);
+                    fprintf(stderr, "%s", history[cur].argvv[i][j]);
                     if (history[cur].argvv[i][j+1] != NULL) {
-                        printf(" ");
+                        fprintf(stderr, " ");
                     }
                 }
                 if (i < history[cur].num_commands-1) {
-                    printf(" | ");
+                    fprintf(stderr, " | ");
                 }
             }
 
             if (history[cur].in_background != 0) {
-                printf(" &");
+                fprintf(stderr, " &");
             }
 
-            printf("\n");
+            fprintf(stderr, "\n");
 
             cur = (cur + 1) % (history_size);
             num++;
@@ -232,28 +232,26 @@ int main(int argc, char* argv[])
 		int in_background = 0;
 		signal(SIGINT, siginthandler);
 
-		if (run_history)
-    {
+		if (run_history) {
         // just call history function
         printHistory();
-        //printf("works\n");
         run_history=0;
-    }
-    else{
-        // Prompt 
-        write(STDERR_FILENO, "MSH>>", strlen("MSH>>"));
 
-        // Get command
-        //********** DO NOT MODIFY THIS PART. IT DISTINGUISH BETWEEN NORMAL/CORRECTION MODE***************
-        executed_cmd_lines++;
-        if( end != 0 && executed_cmd_lines < end) {
-            command_counter = read_command_correction(&argvv, filev, &in_background, cmd_lines[executed_cmd_lines]);
+        } else {
+            // Prompt 
+            write(STDERR_FILENO, "MSH>>", strlen("MSH>>"));
+
+            // Get command
+            //********** DO NOT MODIFY THIS PART. IT DISTINGUISH BETWEEN NORMAL/CORRECTION MODE***************
+            executed_cmd_lines++;
+            if( end != 0 && executed_cmd_lines < end) {
+                command_counter = read_command_correction(&argvv, filev, &in_background, cmd_lines[executed_cmd_lines]);
+            }
+            else if( end != 0 && executed_cmd_lines == end)
+                return 0;
+            else
+                command_counter = read_command(&argvv, filev, &in_background); //NORMAL MODE
         }
-        else if( end != 0 && executed_cmd_lines == end)
-            return 0;
-        else
-            command_counter = read_command(&argvv, filev, &in_background); //NORMAL MODE
-    }
 		//************************************************************************************************
 
 
@@ -270,6 +268,11 @@ int main(int argc, char* argv[])
                         printf("ERROR: Command not found\n");
                     } else {
                         // SOMEHOW RUN SPECIFIED COMMAND HERE
+                        struct command specifiedCmd = history[(head + a) % history_size];
+                        // call to generic function here
+                        fprintf(stderr, "Running command %d\n", a);
+                        
+
                     }
 
                 } else {
