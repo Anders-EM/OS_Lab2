@@ -32,10 +32,6 @@ void siginthandler(int param)
 	exit(0);
 }
 
-/* myhistory */
-
-/* myhistory */
-
 struct command
 {
   // Store the number of commands in argvv
@@ -49,12 +45,6 @@ struct command
   // Store if the command is executed in background or foreground
   int in_background;
 };
-
-int history_size = 20;
-struct command * history;
-int head = 0;
-int tail = 0;
-int n_elem = 0;
 
 void free_command(struct command *cmd)
 {
@@ -115,6 +105,76 @@ void store_command(char ***argvv, char filev[3][64], int in_background, struct c
     }
 }
 
+int history_size = 20;
+struct command * history;
+int head = 0;
+int tail = 0;
+int n_elem = 0;
+
+/* myhistory */
+    // "history" points to an array of command structs
+    // create another pointer to iterate down the array?
+        // call print command every time?
+    // how to shift items once we reach a history length over 20?
+        // use head and tail pointers. update them using modulo size of buffer
+        // n_elem indicates number of elements in history
+
+    void addToHistory(char ***argvv, char filev[3][64], int in_background) {
+        
+        if (n_elem == history_size) {
+            free_command(&history[head]); // at tail or at head
+        }
+
+        store_command(argvv, filev, in_background, &history[tail]);
+        
+        if (n_elem == history_size) {
+            head = (head + 1) % (history_size);
+        }
+
+        if (n_elem != history_size) {
+            ++n_elem;
+        }
+
+        tail = (tail + 1) % (history_size);
+        
+    }
+
+    void printHistory() {
+
+        // STILL NEED TO ADD FUNCTIONALITY FOR FILE REDIRECTION
+        // PRINT TO STANDARD OUTPUT ERROR?
+
+        int cur = head;
+        int num = 0;
+        
+        do {
+
+            printf("%d ", num);
+
+            for (int i = 0; i < history[cur].num_commands; ++i) {
+                for (int j = 0; history[cur].argvv[i][j] != NULL; ++j) {
+                    printf("%s", history[cur].argvv[i][j]);
+                    if (history[cur].argvv[i][j+1] != NULL) {
+                        printf(" ");
+                    }
+                }
+                if (i < history[cur].num_commands-1) {
+                    printf(" | ");
+                }
+            }
+
+            if (history[cur].in_background != 0) {
+                printf(" &");
+            }
+
+            printf("\n");
+
+            cur = (cur + 1) % (history_size);
+            num++;
+        } while ((n_elem == history_size && cur != tail) || (n_elem != history_size && cur < tail));
+    }
+
+/* myhistory */
 
 /**
  * Get the command with its parameters for execvp
@@ -174,12 +234,9 @@ int main(int argc, char* argv[])
 
 		if (run_history)
     {
-        // do history logic here?
-        // "history" points to an array of command structs
-        // create another pointer to iterate down the array?
-        // how to shift items once we reach a history length over 20?
-
-        printf("works\n");
+        // just call history function
+        printHistory();
+        //printf("works\n");
         run_history=0;
     }
     else{
@@ -205,11 +262,27 @@ int main(int argc, char* argv[])
 			if (command_counter > MAX_COMMANDS){
 				printf("Error: Maximum number of commands is %d \n", MAX_COMMANDS);
 			} else if (strcmp(argvv[0][0], "myhistory") == 0) {
-                run_history = 1;
+                if (argvv[0][1]!=NULL) {
+                    // myhistory w specified number
+                    int a = atoi(argvv[0][1]);
+
+                    if (a < 0 || a > 19) {
+                        printf("ERROR: Command not found\n");
+                    } else {
+                        // SOMEHOW RUN SPECIFIED COMMAND HERE
+                    }
+
+                } else {
+                    run_history = 1;
+                }
+                
             } else {
 				// Print command
 				print_command(argvv, filev, in_background);
+
                 // store command sequence in history
+                addToHistory(argvv, filev, in_background);
+
                 int pid = fork();
                 switch (pid) {
                     case -1:
