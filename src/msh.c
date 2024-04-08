@@ -174,6 +174,12 @@ int main(int argc, char* argv[])
 
 		if (run_history)
     {
+        // do history logic here?
+        // "history" points to an array of command structs
+        // create another pointer to iterate down the array?
+        // how to shift items once we reach a history length over 20?
+
+        printf("works\n");
         run_history=0;
     }
     else{
@@ -198,10 +204,12 @@ int main(int argc, char* argv[])
 	   if (command_counter > 0) {
 			if (command_counter > MAX_COMMANDS){
 				printf("Error: Maximum number of commands is %d \n", MAX_COMMANDS);
-			}
-			else {
+			} else if (strcmp(argvv[0][0], "myhistory") == 0) {
+                run_history = 1;
+            } else {
 				// Print command
 				print_command(argvv, filev, in_background);
+                // store command sequence in history
                 int pid = fork();
                 switch (pid) {
                     case -1:
