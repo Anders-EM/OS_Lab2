@@ -272,6 +272,8 @@ int main(int argc, char* argv[])
                         // call to generic function here
                         fprintf(stderr, "Running command %d\n", a);
                         
+                        // THIS WILL BE THE FUNCTION TO EXECUTE A COMMAND PASSED AS A PARAMETER
+                        //executeCommand(&specifiedCmd);
 
                     }
 
@@ -285,6 +287,11 @@ int main(int argc, char* argv[])
 
                 // store command sequence in history
                 addToHistory(argvv, filev, in_background);
+
+                // STORE ACTUAL COMMAND TO BE RUN
+                struct command curCmd;
+                store_command(argvv, filev, in_background, &curCmd);
+                //executeCommand(&curCmd);
 
                 int pid = fork();
                 switch (pid) {
