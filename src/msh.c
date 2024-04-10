@@ -209,6 +209,115 @@ void getCompleteCommand(char ***argvv, int num_command)
 
 void executeCommand(struct command *curCmd, int *status)
 {
+
+    int numPipes = curCmd->num_commands - 1;
+
+    int pipefds[2 * numPipes];
+
+    for (int i = 0; i < numPipes; i++)
+    {
+        if (pipe(pipefds + (i * 2)) < 0)
+        {
+            perror("Error with pipe");
+            exit(-1);
+        }
+    }
+
+    for (int i = 0; i < curCmd->num_commands; i++)
+    {
+        int pid = fork();
+
+        if (pid == 0)
+        { // child process things
+
+            if (i == 0)
+            {
+                if (strcmp(filev[0], "0") != 0)
+                {
+                    int fd_in = open(filev[0], O_RDONLY);
+
+                    if (fd_in < 0)
+                    {
+                        perror("Error opening file");
+                    }
+
+                    dup2(fd_in, STDIN_FILENO);
+                    close(fd_in);
+                }
+            }
+
+            if (i > 0)
+            {
+                dup2(pipefds[(i - 1) * 2], STDIN_FILENO);
+            }
+
+            if (i < numPipes)
+            {
+                dup2(pipefds[i * 2 + 1], STDOUT_FILENO);
+            }
+
+            if (i == numPipes)
+            {
+                if (strcmp(filev[1], "0") != 0)
+                {
+                    int fd_out = open(filev[1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+
+                    if (fd_out < 0)
+                    {
+                        perror("Error opening file");
+                    }
+
+                    dup2(fd_out, STDOUT_FILENO);
+                    close(fd_out);
+                }
+                if (strcmp(filev[2], "0") != 0)
+                {
+                    int fd_err = open(filev[2], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+
+                    if (fd_err < 0)
+                    {
+                        perror("Error opening file");
+                    }
+
+                    dup2(fd_err, STDERR_FILENO);
+                    close(fd_err);
+                }
+            }
+
+            for (int j = 0; j < 2 * numPipes; j++)
+            {
+                close(pipefds[j]);
+            }
+
+            getCompleteCommand(curCmd->argvv, i);
+            execvp(argv_execvp[0], argv_execvp);
+            perror("Error in exec call");
+            break;
+        }
+        else if (pid < 0)
+        {
+            perror("Error in fork");
+            exit(-1);
+        }
+    }
+
+    for (int i = 0; i < 2 * numPipes; i++)
+    {
+        close(pipefds[i]);
+    }
+
+    if (curCmd->in_background == 0)
+    {
+        for (int i = 0; i < curCmd->num_commands; i++)
+        {
+            wait(NULL);
+        }
+    }
+    else
+    {
+        printf("Child process identifier: %d\n", getpid());
+    }
+    /*
     int pid = fork();
     switch (pid)
     {
@@ -255,7 +364,7 @@ void executeCommand(struct command *curCmd, int *status)
         else
         {
 
-            /* File Redirection */
+
 
             if (strcmp(filev[0], "0") != 0)
             {
@@ -294,7 +403,7 @@ void executeCommand(struct command *curCmd, int *status)
                 close(fd_err);
             }
 
-            /* END */
+
 
             execvp(argv_execvp[0], argv_execvp);
             perror("Error in exec call");
@@ -312,7 +421,7 @@ void executeCommand(struct command *curCmd, int *status)
             printf("Child process identifier: %d\n", pid);
         }
         break;
-    }
+    } */
 }
 
 /**
